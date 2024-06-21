@@ -19,6 +19,10 @@ module.exports = {
           '100%': { transform: 'rotate(360deg)' },
         },
       },
+      borderRadius: {
+        '4xl': '4rem', 
+        't-4xl': '4rem',
+      },
     },
   },
   plugins: [],

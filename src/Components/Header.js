@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
 import { MdClose, MdMenu } from 'react-icons/md'
 import { FaOpencart } from 'react-icons/fa'
-import logo from '../images/logos/CILogo.png'
+import logo from '../assets/logos/logo.svg'
 
 //import images svg
 import Navbar from './NavBar'
@@ -14,13 +14,11 @@ const Header = () => {
   const [isAnimating, setIsAnimating] = useState(false)
 
   const handleClick = () => {
-    // Trigger the animation
     setIsAnimating(true)
 
-    // Optionally reset the animation after 1 second
     setTimeout(() => {
       setIsAnimating(false)
-    }, 500) // Match the animation duration
+    }, 500)
   }
 
   return (
@@ -84,7 +82,7 @@ const Header = () => {
         </div>
         <div
           // to={'login'}
-          className={
+          className={ 
             'bg-btnColor text-xs lg:text-base text-white  rounded-lg flex items-center justify-center gap-x-2 p-2 lg:p-3'
           }
         >
