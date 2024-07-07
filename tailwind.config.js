@@ -23,6 +23,9 @@ module.exports = {
         '4xl': '4rem', 
         't-4xl': '4rem',
       },
+      backgroundImage: {
+        'custom-image': "url('./assets/images/img.png')",
+      }
     },
   },
   plugins: [],

@@ -5,3 +5,10 @@
 * {
   font-family: 'Inter', 'sans-serif';
 }
+
+.bg-custom {
+  background-image: url('./assets/images/img.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
