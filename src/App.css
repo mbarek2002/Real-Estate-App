@@ -1,0 +1,283 @@
+/* Custom styles for the Real Estate App */
+
+/* Modern CSS Reset and Base Styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  line-height: 1.6;
+  color: #1f2937;
+  background-color: #f9fafb;
+}
+
+/* Smooth transitions */
+* {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Modern scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6366f1, #4f46e5);
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #4f46e5, #4338ca);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #6366f1 #f1f5f9;
+}
+
+/* Loading animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Modern button styles */
+.btn-primary {
+  @apply bg-gradient-to-r from-primary-600 to-primary-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-200 focus:ring-offset-2 transform hover:scale-105 active:scale-95 transition-all duration-300;
+}
+
+.btn-secondary {
+  @apply bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-gray-700 hover:to-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-200 focus:ring-offset-2 transform hover:scale-105 active:scale-95 transition-all duration-300;
+}
+
+.btn-outline {
+  @apply border-2 border-primary-300 text-primary-700 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-xl font-semibold hover:bg-primary-50 hover:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-200 focus:ring-offset-2 transform hover:scale-105 active:scale-95 transition-all duration-300;
+}
+
+.btn-ghost {
+  @apply text-primary-600 bg-transparent hover:bg-primary-50 px-6 py-3 rounded-xl font-semibold focus:outline-none focus:ring-4 focus:ring-primary-200 focus:ring-offset-2 transition-all duration-300;
+}
+
+.btn-sm {
+  @apply px-4 py-2 text-sm;
+}
+
+.btn-lg {
+  @apply px-8 py-4 text-lg;
+}
+
+/* Modern card styles */
+.card {
+  @apply bg-white/80 backdrop-blur-sm rounded-2xl shadow-card border border-white/20 overflow-hidden hover:shadow-card-hover transition-all duration-300;
+}
+
+.card-elevated {
+  @apply bg-white rounded-2xl shadow-lg border border-gray-100/50 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300;
+}
+
+.card-glass {
+  @apply bg-white/70 backdrop-blur-md rounded-2xl shadow-soft border border-white/30 overflow-hidden hover:bg-white/80 transition-all duration-300;
+}
+
+/* Property card hover effects */
+.property-card {
+  @apply transform transition-all duration-300 hover:scale-105 hover:shadow-card-hover;
+}
+
+.property-card:hover {
+  @apply shadow-glow;
+}
+
+/* Modern form styles */
+.form-input {
+  @apply w-full p-4 border-2 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-4 focus:ring-primary-200 focus:border-primary-400 focus:bg-white transition-all duration-300 shadow-inner;
+}
+
+.form-input:focus {
+  @apply shadow-glow;
+}
+
+.form-label {
+  @apply block text-sm font-semibold text-gray-700 mb-3 tracking-wide;
+}
+
+.form-group {
+  @apply space-y-2;
+}
+
+.form-error {
+  @apply text-sm text-red-600 mt-1 flex items-center gap-1;
+}
+
+.form-success {
+  @apply text-sm text-green-600 mt-1 flex items-center gap-1;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Gradient backgrounds */
+.gradient-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-bg-2 {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+/* Shadow utilities */
+.shadow-soft {
+  box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07),
+    0 10px 20px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* Text utilities */
+.text-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Image utilities */
+.image-overlay {
+  position: relative;
+  overflow: hidden;
+}
+
+.image-overlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.image-overlay:hover::before {
+  opacity: 1;
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .mobile-hidden {
+    display: none;
+  }
+}
+
+/* Custom focus styles */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+/* Status badges */
+.status-available {
+  @apply bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.status-sold {
+  @apply bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.status-rented {
+  @apply bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+/* Loading skeleton */
+.skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+.skeleton-text {
+  @apply skeleton h-4 w-3/4 mb-2;
+}
+
+.skeleton-title {
+  @apply skeleton h-6 w-1/2 mb-4;
+}
+
+.skeleton-image {
+  @apply skeleton h-48 w-full mb-4;
+}
+
+/* Custom popup styles for map markers */
+.custom-popup .leaflet-popup-content-wrapper {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.custom-popup .leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+  width: auto !important;
+  min-width: 320px;
+}
+
+.custom-popup .leaflet-popup-tip {
+  background: white;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.custom-popup .leaflet-popup-close-button {
+  display: none;
+}
