@@ -23,6 +23,7 @@ const Header = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchSuccess, setSearchSuccess] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -104,8 +105,10 @@ const Header = () => {
             lng: parseFloat(lon),
           });
 
-          // Clear the search input after successful search
+          // Clear the search input and show success
           setLocationSearch("");
+          setSearchSuccess(true);
+          setTimeout(() => setSearchSuccess(false), 3000); // Hide success message after 3 seconds
         } else {
           alert("Location not found. Please try a different address.");
         }
@@ -126,12 +129,22 @@ const Header = () => {
   const handleSuggestionSelect = (suggestion) => {
     const { lat, lon, display_name } = suggestion;
     setLocation({ latitude: parseFloat(lat), longitude: parseFloat(lon) });
-    setLocationSearch(display_name);
+    setLocationSearch(""); // Clear the search input after selection
     setShowSuggestions(false);
+    setSearchSuggestions([]); // Clear suggestions
     console.log("Location updated from suggestion:", {
       lat: parseFloat(lat),
       lng: parseFloat(lon),
+      address: display_name,
     });
+    // Show success message
+    setSearchSuccess(true);
+    setTimeout(() => setSearchSuccess(false), 3000);
+
+    // Optionally navigate to explore page with coordinates
+    if (location.pathname !== "/explore") {
+      navigate(`/explore?lat=${lat}&lng=${lon}&zoom=12`);
+    }
   };
 
   // Handle input focus
@@ -266,35 +279,59 @@ const Header = () => {
                       )}
                     </button>
 
-                    {/* Search Suggestions Dropdown */}
-                    {showSuggestions && searchSuggestions.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-sm border border-white/30 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
-                        {searchSuggestions.map((suggestion, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            onClick={() => handleSuggestionSelect(suggestion)}
-                            className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200 border-b border-gray-100 last:border-b-0"
-                          >
-                            <div className="flex items-center gap-2">
-                              <MdLocationOn className="h-4 w-4 text-primary-500 flex-shrink-0" />
-                              <div className="truncate">
-                                <div className="font-medium">
-                                  {suggestion.display_name.split(",")[0]}
-                                </div>
-                                <div className="text-xs text-gray-500 truncate">
-                                  {suggestion.display_name
-                                    .split(",")
-                                    .slice(1)
-                                    .join(",")
-                                    .trim()}
-                                </div>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
+                    {/* Success Message */}
+                    {searchSuccess && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-green-500 text-white px-4 py-2 rounded-xl shadow-lg z-50 flex items-center gap-2">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        <span className="text-sm font-medium">
+                          Location updated successfully!
+                        </span>
                       </div>
                     )}
+
+                    {/* Search Suggestions Dropdown */}
+                    {showSuggestions &&
+                      searchSuggestions.length > 0 &&
+                      !searchSuccess && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-sm border border-white/30 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+                          {searchSuggestions.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => handleSuggestionSelect(suggestion)}
+                              className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="flex items-center gap-2">
+                                <MdLocationOn className="h-4 w-4 text-primary-500 flex-shrink-0" />
+                                <div className="truncate">
+                                  <div className="font-medium">
+                                    {suggestion.display_name.split(",")[0]}
+                                  </div>
+                                  <div className="text-xs text-gray-500 truncate">
+                                    {suggestion.display_name
+                                      .split(",")
+                                      .slice(1)
+                                      .join(",")
+                                      .trim()}
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                   </div>
                 </form>
               </div>
@@ -440,35 +477,59 @@ const Header = () => {
                       )}
                     </button>
 
-                    {/* Mobile Search Suggestions Dropdown */}
-                    {showSuggestions && searchSuggestions.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-sm border border-white/30 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
-                        {searchSuggestions.map((suggestion, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            onClick={() => handleSuggestionSelect(suggestion)}
-                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200 border-b border-gray-100 last:border-b-0"
-                          >
-                            <div className="flex items-center gap-2">
-                              <MdLocationOn className="h-4 w-4 text-primary-500 flex-shrink-0" />
-                              <div className="truncate">
-                                <div className="font-medium text-xs">
-                                  {suggestion.display_name.split(",")[0]}
-                                </div>
-                                <div className="text-xs text-gray-500 truncate">
-                                  {suggestion.display_name
-                                    .split(",")
-                                    .slice(1, 3)
-                                    .join(",")
-                                    .trim()}
-                                </div>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
+                    {/* Mobile Success Message */}
+                    {searchSuccess && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-green-500 text-white px-3 py-2 rounded-xl shadow-lg z-50 flex items-center gap-2">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        <span className="text-xs font-medium">
+                          Location updated!
+                        </span>
                       </div>
                     )}
+
+                    {/* Mobile Search Suggestions Dropdown */}
+                    {showSuggestions &&
+                      searchSuggestions.length > 0 &&
+                      !searchSuccess && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-sm border border-white/30 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
+                          {searchSuggestions.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => handleSuggestionSelect(suggestion)}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="flex items-center gap-2">
+                                <MdLocationOn className="h-4 w-4 text-primary-500 flex-shrink-0" />
+                                <div className="truncate">
+                                  <div className="font-medium text-xs">
+                                    {suggestion.display_name.split(",")[0]}
+                                  </div>
+                                  <div className="text-xs text-gray-500 truncate">
+                                    {suggestion.display_name
+                                      .split(",")
+                                      .slice(1, 3)
+                                      .join(",")
+                                      .trim()}
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                   </div>
                 </form>
               </div>
