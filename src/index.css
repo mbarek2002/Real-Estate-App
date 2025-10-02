@@ -3,12 +3,29 @@
 @tailwind utilities;
 
 * {
-  font-family: 'Inter', 'sans-serif';
+  font-family: "Inter", "sans-serif";
+}
+
+.glass {
+  @apply bg-white/70 backdrop-blur-md;
 }
 
 .bg-custom {
-  background-image: url('./assets/images/img.png');
+  background-image: url("./assets/images/img.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+/* Ensure popup cards appear above navbar */
+.custom-popup {
+  z-index: 1000 !important;
+}
+
+.custom-popup .leaflet-popup-content-wrapper {
+  z-index: 1000 !important;
+}
+
+.custom-popup .leaflet-popup-tip {
+  z-index: 1000 !important;
 }

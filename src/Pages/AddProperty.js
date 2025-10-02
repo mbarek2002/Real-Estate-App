@@ -47,6 +47,11 @@ const AddProperty = () => {
   const [images360, setImages360] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fetchingAddress, setFetchingAddress] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+
+  const GOOGLE_API_KEY = "AIzaSyC8ryXWo1czHJR_3F6CSHRwG39x6fIkPMk";
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -61,6 +66,43 @@ const AddProperty = () => {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
+
+  // Debounced address search
+  useEffect(() => {
+    if (!formData.address || formData.address.length < 3) {
+      setAddressSuggestions([]);
+      setShowAddressSuggestions(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        setFetchingAddress(true);
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+            formData.address
+          )}&key=${GOOGLE_API_KEY}`
+        );
+        const data = await response.json();
+
+        if (data.status === "OK" && data.results) {
+          setAddressSuggestions(data.results.slice(0, 5)); // Limit to 5 suggestions
+          setShowAddressSuggestions(true);
+        } else {
+          setAddressSuggestions([]);
+          setShowAddressSuggestions(false);
+        }
+      } catch (err) {
+        console.error("Error fetching address suggestions:", err);
+        setAddressSuggestions([]);
+        setShowAddressSuggestions(false);
+      } finally {
+        setFetchingAddress(false);
+      }
+    }, 500); // Debounce delay
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.address]);
 
   const handleImageUpload = (e, type) => {
     const files = Array.from(e.target.files);
@@ -79,6 +121,105 @@ const AddProperty = () => {
     }
   };
 
+  const fetchAddressFromCoordinates = async () => {
+    if (!formData.latitude || !formData.longitude) {
+      setError("Please enter latitude and longitude first");
+      return;
+    }
+
+    setFetchingAddress(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${formData.latitude},${formData.longitude}&key=${GOOGLE_API_KEY}`
+      );
+      const data = await response.json();
+
+      if (data.status === "OK" && data.results.length > 0) {
+        const address = data.results[0].formatted_address;
+        setFormData((prev) => ({
+          ...prev,
+          address: address,
+        }));
+      } else {
+        setError("Could not fetch address. Please enter it manually.");
+      }
+    } catch (err) {
+      console.error("Error fetching address:", err);
+      setError("Failed to fetch address. Please enter it manually.");
+    } finally {
+      setFetchingAddress(false);
+    }
+  };
+
+  const handleAddressSelect = (suggestion) => {
+    const { formatted_address, geometry } = suggestion;
+    const { lat, lng } = geometry.location;
+
+    setFormData((prev) => ({
+      ...prev,
+      address: formatted_address,
+      latitude: lat.toString(),
+      longitude: lng.toString(),
+    }));
+
+    setShowAddressSuggestions(false);
+    setAddressSuggestions([]);
+  };
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setFetchingAddress(true);
+    setError("");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        // Set coordinates
+        setFormData((prev) => ({
+          ...prev,
+          latitude: latitude.toString(),
+          longitude: longitude.toString(),
+        }));
+
+        // Fetch address automatically
+        try {
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_API_KEY}`
+          );
+          const data = await response.json();
+
+          if (data.status === "OK" && data.results.length > 0) {
+            const address = data.results[0].formatted_address;
+            setFormData((prev) => ({
+              ...prev,
+              latitude: latitude.toString(),
+              longitude: longitude.toString(),
+              address: address,
+            }));
+          }
+        } catch (err) {
+          console.error("Error fetching address:", err);
+        } finally {
+          setFetchingAddress(false);
+        }
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        setError(
+          "Unable to get your location. Please enter coordinates manually."
+        );
+        setFetchingAddress(false);
+      }
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -94,27 +235,20 @@ const AddProperty = () => {
         throw new Error("Please fill in all required fields");
       }
 
-      // Create FormData for file upload
-      const submitData = new FormData();
+      // Validate coordinates
+      if (!formData.latitude || !formData.longitude) {
+        throw new Error(
+          "Please provide valid latitude and longitude coordinates"
+        );
+      }
 
-      // Add all form fields
-      Object.keys(formData).forEach((key) => {
-        if (formData[key] !== "" && formData[key] !== null) {
-          submitData.append(key, formData[key]);
-        }
-      });
-
-      // Add owner ID
-      submitData.append("ownerId", user._id);
-
-      // Add images
-      images.forEach((file) => {
-        submitData.append("images", file);
-      });
-
-      images360.forEach((file) => {
-        submitData.append("images360", file);
-      });
+      // Prepare data object (not FormData)
+      const submitData = {
+        ...formData,
+        ownerId: user._id,
+        images: images,
+        images360: images360,
+      };
 
       // Submit property
       const response = await propertyAPI.addProperty(submitData);
@@ -122,7 +256,8 @@ const AddProperty = () => {
       if (response.ok) {
         navigate("/");
       } else {
-        throw new Error("Failed to create property");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create property");
       }
     } catch (error) {
       console.error("Error creating property:", error);
@@ -540,26 +675,64 @@ const AddProperty = () => {
 
               {/* Location */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Location
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Location
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={getCurrentLocation}
+                    disabled={fetchingAddress}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
+                  >
+                    {fetchingAddress ? (
+                      <>
+                        <svg
+                          className="animate-spin h-4 w-4 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Getting Location...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                          />
+                        </svg>
+                        Use My Location
+                      </>
+                    )}
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter property address"
-                    />
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Latitude
+                      Latitude *
                     </label>
                     <input
                       type="number"
@@ -569,11 +742,12 @@ const AddProperty = () => {
                       onChange={handleInputChange}
                       className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="e.g., 40.7128"
+                      required
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Longitude
+                      Longitude *
                     </label>
                     <input
                       type="number"
@@ -583,7 +757,170 @@ const AddProperty = () => {
                       onChange={handleInputChange}
                       className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="e.g., -74.0060"
+                      required
                     />
+                  </div>
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={fetchAddressFromCoordinates}
+                      disabled={
+                        fetchingAddress ||
+                        !formData.latitude ||
+                        !formData.longitude
+                      }
+                      className="w-full p-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
+                    >
+                      {fetchingAddress ? (
+                        <>
+                          <svg
+                            className="animate-spin h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Fetching...
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          Fetch Address
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div className="md:col-span-3 relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        onFocus={() =>
+                          addressSuggestions.length > 0 &&
+                          setShowAddressSuggestions(true)
+                        }
+                        onBlur={() =>
+                          setTimeout(
+                            () => setShowAddressSuggestions(false),
+                            200
+                          )
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Type address to search (e.g., '123 Main St, Paris')"
+                      />
+                      {fetchingAddress && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <svg
+                            className="animate-spin h-4 w-4 text-blue-600"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                        </div>
+                      )}
+
+                      {/* Address Suggestions Dropdown */}
+                      {showAddressSuggestions &&
+                        addressSuggestions.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                            {addressSuggestions.map((suggestion, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => handleAddressSelect(suggestion)}
+                                className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                              >
+                                <div className="flex items-start gap-2">
+                                  <svg
+                                    className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                    />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                  </svg>
+                                  <div className="flex-1">
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {suggestion.formatted_address}
+                                    </div>
+                                    {suggestion.place_id && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        {suggestion.geometry?.location_type ||
+                                          ""}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Type an address to see suggestions, or enter coordinates
+                      and click "Fetch Address"
+                    </p>
                   </div>
                 </div>
               </div>
