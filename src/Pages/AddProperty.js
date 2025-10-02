@@ -51,7 +51,7 @@ const AddProperty = () => {
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
 
-  const GOOGLE_API_KEY = "AIzaSyC8ryXWo1czHJR_3F6CSHRwG39x6fIkPMk";
+  const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
 
   useEffect(() => {
     if (!isAuthenticated) {
